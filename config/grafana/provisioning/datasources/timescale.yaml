@@ -1,0 +1,21 @@
+# Grafana datasource provisioning - Postgres/TimescaleDB
+apiVersion: 1
+
+datasources:
+  - name:      TimescaleDB
+    uid:       pdm-timescale
+    type:      postgres
+    url:       timescale:5432
+    user:      ${POSTGRES_USER}
+    jsonData:
+      database:           ${POSTGRES_DB}
+      sslmode:            disable
+      postgresVersion:    1700
+      timescaledb:        true
+      maxOpenConns:       20
+      maxIdleConns:       5
+      connMaxLifetime:    14400
+    secureJsonData:
+      password:           ${POSTGRES_PASSWORD}
+    isDefault: true
+    editable:  true

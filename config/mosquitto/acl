@@ -1,0 +1,28 @@
+# ACL file — topic-level access control.
+# Defense in depth: even on an isolated AP network, least privilege matters.
+#
+# User patterns:
+#   worker  - cloud pipeline. Reads everything; publishes alerts + DLQ.
+#   esp32-* - devices. Publish their own telemetry; subscribe to own cmd/alert.
+#   demo    - dashboards and debugging. Read-only on everything.
+
+# ------- Worker (consumer + publisher) -------
+user worker
+topic read  iotpdm/#
+topic write iotpdm/+/+/+/alert
+topic write iotpdm/+/+/+/dlq
+topic read  $SYS/#
+
+# ------- Per-device ACLs (pattern uses %u substitution = client username) -------
+# NOTE: ESP32 client_id MUST equal username (we set DEVICE_ID = esp32-a17 = username).
+pattern write iotpdm/+/+/%u/features
+pattern write iotpdm/+/+/%u/burst
+pattern write iotpdm/+/+/%u/status
+pattern write iotpdm/+/+/%u/dlq
+pattern read  iotpdm/+/+/%u/cmd
+pattern read  iotpdm/+/+/%u/alert
+
+# ------- Read-only demo user for dashboards -------
+user demo
+topic read iotpdm/#
+topic read $SYS/#

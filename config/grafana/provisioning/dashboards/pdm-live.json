@@ -1,0 +1,9 @@
+{
+  "annotations": {"list": []},
+  "panels": [],
+  "schemaVersion": 39,
+  "tags": ["iot-pdm"],
+  "title": "IoT PdM - Live (placeholder)",
+  "uid": "pdm-live",
+  "version": 1
+}
