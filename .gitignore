@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ===== IoT PdM project-specific =====
+# Secrets
+.env
+config/mosquitto/passwd
+firmware/sensor-node/include/secrets.h
+
+# PlatformIO build artifacts
+.pio/
+firmware/sensor-node/.pio/
+firmware/sensor-node/.vscode/
+
+# ML artifacts
+models/*.joblib
+!models/.gitkeep
+
+# Backups
+backup_*.sql.gz
+
+# OS
+.DS_Store

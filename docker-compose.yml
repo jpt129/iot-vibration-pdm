@@ -1,0 +1,167 @@
+# docker-compose.yml — IoT Vibration PdM
+# Tested with Docker Compose v2.30+ and Docker Engine 28+
+# All images are multi-arch (works on Mac M-series and Pi 5 arm64)
+
+name: iot-pdm
+
+x-common-env: &common-env
+  POSTGRES_HOST:     ${POSTGRES_HOST}
+  POSTGRES_PORT:     ${POSTGRES_PORT}
+  POSTGRES_DB:       ${POSTGRES_DB}
+  POSTGRES_USER:     ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  MQTT_HOST:         ${MQTT_HOST}
+  MQTT_PORT:         ${MQTT_PORT}
+  MQTT_USER:         ${MQTT_WORKER_USER}
+  MQTT_PASS:         ${MQTT_WORKER_PASS}
+  LOG_LEVEL:         ${WORKER_LOG_LEVEL}
+
+networks:
+  pdm:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  timescale_data:
+  grafana_data:
+  ml_models:
+
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.22
+    container_name: pdm-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/mosquitto/passwd:/mosquitto/config/passwd:ro
+      - ./config/mosquitto/acl:/mosquitto/config/acl:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks: [pdm]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3 -u ${MQTT_WORKER_USER} -P ${MQTT_WORKER_PASS} || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  timescale:
+    image: timescale/timescaledb:2.18.1-pg17
+    container_name: pdm-timescale
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TIMESCALEDB_TELEMETRY: "off"
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./config/timescale/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [pdm]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: pdm-worker
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      WORKER_LATE_TOLERANCE_S:   ${WORKER_LATE_TOLERANCE_S}
+      WORKER_DLQ_TABLE:          ${WORKER_DLQ_TABLE}
+      WORKER_ANOMALY_THRESHOLD:  ${WORKER_ANOMALY_THRESHOLD}
+      WORKER_BASELINE_WINDOW:    ${WORKER_BASELINE_WINDOW}
+    volumes:
+      - ml_models:/app/models
+      - ./src:/app/src:ro
+    depends_on:
+      mosquitto:   { condition: service_healthy }
+      timescale:   { condition: service_healthy }
+    networks: [pdm]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9100/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: pdm-api
+    restart: unless-stopped
+    command: ["python", "-m", "uvicorn", "iot_pdm.api.app:app", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      <<: *common-env
+    volumes:
+      - ml_models:/app/models
+      - ./src:/app/src:ro
+    ports:
+      - "${API_PORT}:8080"
+    depends_on:
+      timescale: { condition: service_healthy }
+    networks: [pdm]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/streamlit.Dockerfile
+    container_name: pdm-streamlit
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+    ports:
+      - "${STREAMLIT_PORT}:8501"
+    volumes:
+      - ml_models:/app/models
+      - ./src:/app/src:ro
+      - ./streamlit_app:/app/streamlit_app:ro
+    depends_on:
+      timescale: { condition: service_healthy }
+    networks: [pdm]
+
+  grafana:
+    image: grafana/grafana-oss:11.3.1
+    container_name: pdm-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER:     ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_INSTALL_PLUGINS:         ${GF_INSTALL_PLUGINS}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_AUTH_ANONYMOUS_ENABLED:  "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/etc/grafana/provisioning/dashboards/pdm-live.json"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      timescale: { condition: service_healthy }
+    networks: [pdm]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
