@@ -2,6 +2,7 @@
 
 #include "fault_injection.h"
 #include "config.h"
+#include "secrets.h"
 #include "mqtt_publisher.h"
 #include "led.h"
 #include <ArduinoJson.h>

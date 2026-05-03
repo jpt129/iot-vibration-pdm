@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include "config.h"
+#include "secrets.h"
 #include "imu_task.h"
 #include "mic_task.h"
 #include "thermal_task.h"
