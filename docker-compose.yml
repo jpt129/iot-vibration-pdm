@@ -34,8 +34,7 @@ services:
     container_name: pdm-mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "${MQTT_HOST_PORT:-1883}:1883"
     volumes:
       - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - ./config/mosquitto/passwd:/mosquitto/config/passwd:ro
@@ -60,7 +59,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TIMESCALEDB_TELEMETRY: "off"
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - timescale_data:/var/lib/postgresql/data
       - ./config/timescale/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -111,7 +110,7 @@ services:
       - ml_models:/app/models
       - ./src:/app/src:ro
     ports:
-      - "${API_PORT}:8080"
+      - "${API_HOST_PORT:-8080}:8080"
     depends_on:
       timescale: { condition: service_healthy }
     networks: [pdm]
@@ -130,7 +129,7 @@ services:
     environment:
       <<: *common-env
     ports:
-      - "${STREAMLIT_PORT}:8501"
+      - "${STREAMLIT_HOST_PORT:-8501}:8501"
     volumes:
       - ml_models:/app/models
       - ./src:/app/src:ro
@@ -155,7 +154,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
     ports:
-      - "3000:3000"
+      - "${GRAFANA_HOST_PORT:-3000}:3000"
     depends_on:
       timescale: { condition: service_healthy }
     networks: [pdm]
