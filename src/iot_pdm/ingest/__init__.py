@@ -1,0 +1,1 @@
+"""MQTT consumer + DB writer."""
