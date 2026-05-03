@@ -1,5 +1,5 @@
 # IoT Vibration PdM — operator convenience targets
-.PHONY: help up down restart logs ps build psql mqtt-sub demo-fault \
+.PHONY: help up down restart logs ps build psql init-db mqtt-sub demo-fault \
         demo-malformed demo-null demo-oor demo-schema demo-late demo-reboot \
         seed-passwd backup health flash-node monitor
 
@@ -38,6 +38,12 @@ build:
 
 psql:
 	docker compose exec timescale psql -U iotpdm -d iotpdm
+
+init-db:
+	@echo "Running init.sql against the running timescale container..."
+	docker compose exec -T timescale psql -U iotpdm -d iotpdm < config/timescale/init.sql
+	@echo "Verifying schema..."
+	docker compose exec timescale psql -U iotpdm -d iotpdm -c "\dt"
 
 mqtt-sub:
 	docker compose exec mosquitto mosquitto_sub \
