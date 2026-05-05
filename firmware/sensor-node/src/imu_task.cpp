@@ -8,6 +8,7 @@
 
 MPU9250 imu(Wire, MPU9250_I2C_ADDR);
 ImuRingBuffer g_imu_ring = {{0}, 0, 0};
+volatile bool g_imu_ok = false;
 
 void imu_init() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
@@ -31,10 +32,17 @@ void imu_init() {
   imu.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_184HZ);
   imu.setSrd(0);
 
+  g_imu_ok = true;
   log_i("[IMU] MPU-9250 initialized (+/-4g, DLPF 184Hz, 1 kHz)");
 }
 
 void imu_task(void *param) {
+  if (!g_imu_ok) {
+    log_w("[IMU] task exiting - sensor not initialized");
+    vTaskDelete(NULL);
+    return;
+  }
+
   const uint32_t period_us = 1000000UL / IMU_SAMPLE_HZ;
   uint32_t next_sample = micros();
 

@@ -8,6 +8,7 @@ struct ImuRingBuffer {
 };
 
 extern ImuRingBuffer g_imu_ring;
+extern volatile bool g_imu_ok;
 
 void imu_init();
 void imu_task(void *param);

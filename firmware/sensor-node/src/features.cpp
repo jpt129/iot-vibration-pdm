@@ -18,13 +18,26 @@ void features_init() {
   fft_real = (double*)ps_malloc(IMU_FFT_SIZE * sizeof(double));
   fft_imag = (double*)ps_malloc(IMU_FFT_SIZE * sizeof(double));
   if (!fft_real || !fft_imag) {
-    log_e("[FEATURES] failed to allocate FFT buffers in PSRAM!");
-    return;
+    log_w("[FEATURES] PSRAM unavailable; allocating FFT buffers in internal RAM");
+    if (fft_real) free(fft_real);
+    if (fft_imag) free(fft_imag);
+    fft_real = (double*)heap_caps_malloc(IMU_FFT_SIZE * sizeof(double), MALLOC_CAP_8BIT);
+    fft_imag = (double*)heap_caps_malloc(IMU_FFT_SIZE * sizeof(double), MALLOC_CAP_8BIT);
+    if (!fft_real || !fft_imag) {
+      log_e("[FEATURES] FATAL: cannot allocate FFT buffers anywhere");
+      return;
+    }
   }
   fft_engine = new ArduinoFFT<double>(fft_real, fft_imag, IMU_FFT_SIZE, (double)IMU_SAMPLE_HZ);
+  log_i("[FEATURES] FFT engine ready");
 }
 
 static void compute_imu_features(FeatureVector &f) {
+  if (!fft_engine) {
+    f.rms_g = 0; f.kurtosis = 0; f.crest_factor = 0; f.peak_hz = 0; f.peak_mag = 0;
+    f.quality = 0;
+    return;
+  }
   float window[IMU_FFT_SIZE];
   if (!imu_snapshot(window, IMU_FFT_SIZE)) {
     f.quality = 0;

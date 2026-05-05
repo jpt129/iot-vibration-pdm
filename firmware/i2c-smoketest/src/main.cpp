@@ -15,6 +15,9 @@ void setup() {
   Serial.println("I2C smoke test - scanning bus 0x01..0x7F");
   Serial.printf("SDA=GPIO%d  SCL=GPIO%d\n", PIN_SDA, PIN_SCL);
   Serial.println("========================================\n");
+  pinMode(PIN_SDA, INPUT_PULLUP);
+  pinMode(PIN_SCL, INPUT_PULLUP);
+  delay(10);
   Wire.begin(PIN_SDA, PIN_SCL);
   Wire.setClock(100000);  // 100 kHz - slow + forgiving
 }
