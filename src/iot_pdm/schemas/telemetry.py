@@ -21,8 +21,8 @@ class Metrics(BaseModel):
 
     # Time-domain
     rms_g: float = Field(ge=0.0, le=32.0)
-    kurtosis: float = Field(ge=0.0, le=100.0)
-    crest: float = Field(ge=0.0, le=100.0)
+    kurtosis: float = Field(ge=0.0, le=100000.0)
+    crest: float = Field(ge=0.0, le=10000.0)
     # Frequency-domain
     peak_hz: float = Field(ge=0.0, le=500.0)
     peak_mag: float = Field(ge=0.0)

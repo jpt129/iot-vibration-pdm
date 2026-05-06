@@ -10,7 +10,10 @@
 #include "mqtt_publisher.h"
 #include "led.h"
 
+SemaphoreHandle_t g_i2c_mutex = nullptr;
+
 void setup() {
+  g_i2c_mutex = xSemaphoreCreateMutex();
   Serial.begin(115200);
   delay(2000);
   Serial.println("\n\n=========================================");

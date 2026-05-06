@@ -115,6 +115,7 @@ static uint8_t assess_quality(const FeatureVector &f) {
 void features_task(void *param) {
   TickType_t last_wake = xTaskGetTickCount();
   const TickType_t period = pdMS_TO_TICKS(1000 / FEATURE_PUBLISH_HZ);
+  uint32_t last_heartbeat_ms = 0;
 
   for (;;) {
     vTaskDelayUntil(&last_wake, period);
@@ -129,5 +130,11 @@ void features_task(void *param) {
     f.quality = assess_quality(f);
 
     mqtt_enqueue_feature(f);
+
+    if (millis() - last_heartbeat_ms > 5000) {
+      log_i("[FEATURES] seq=%u rms_g=%.4f peak_hz=%.1f therm_max=%.2f quality=%u",
+            f.seq, f.rms_g, f.peak_hz, f.therm_max_c, f.quality);
+      last_heartbeat_ms = millis();
+    }
   }
 }

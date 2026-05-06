@@ -64,3 +64,8 @@
 
 #define CORE_SENSORS         0
 #define CORE_NETWORKING      1
+
+// ---- I2C bus mutex (shared between IMU and thermal tasks) ----
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+extern SemaphoreHandle_t g_i2c_mutex;
