@@ -212,6 +212,11 @@ static void serialize_feature(const FeatureVector &f, char *out, size_t out_size
   m["therm_min_c"]  = f.therm_min_c;
   m["therm_mean_c"] = f.therm_mean_c;
   m["therm_max_c"]  = f.therm_max_c;
+  m["accel_x_rms"]  = f.accel_x_rms;
+  m["accel_y_rms"]  = f.accel_y_rms;
+  m["accel_mag_rms"]= f.accel_mag_rms;
+  m["therm_gradient_c"]  = f.therm_gradient_c;
+  m["therm_hotspot_pct"] = f.therm_hotspot_pct;
 
   if (g_inject_schema_bad) {
     doc["schema_version"] = "0.9";   // breaks Literal["1.0"] check

@@ -12,6 +12,7 @@ volatile bool  g_thermal_ready = false;
 volatile float g_thermal_min_c  = 0;
 volatile float g_thermal_mean_c = 0;
 volatile float g_thermal_max_c  = 0;
+volatile float g_thermal_hotspot_pct = 0;
 
 void thermal_init() {
   if (g_i2c_mutex) xSemaphoreTake(g_i2c_mutex, portMAX_DELAY);
@@ -49,9 +50,24 @@ void thermal_task(void *param) {
       if (t > mx) mx = t;
       sum += t;
     }
+    float mean_t = sum / 768.0f;
+    // Compute std dev in second pass, then count pixels > mean + 2*std
+    float ss = 0;
+    for (int i = 0; i < 768; i++) {
+      float d = frame_buf[i] - mean_t;
+      ss += d*d;
+    }
+    float std_t = sqrtf(ss / 768.0f);
+    float threshold = mean_t + 2.0f * std_t;
+    int hotspot_count = 0;
+    for (int i = 0; i < 768; i++) {
+      if (frame_buf[i] > threshold) hotspot_count++;
+    }
+
     g_thermal_min_c  = mn;
-    g_thermal_mean_c = sum / 768.0f;
+    g_thermal_mean_c = mean_t;
     g_thermal_max_c  = mx;
+    g_thermal_hotspot_pct = (100.0f * hotspot_count) / 768.0f;
     g_thermal_ready  = true;
   }
 }

@@ -16,6 +16,11 @@ struct FeatureVector {
   float therm_min_c;
   float therm_mean_c;
   float therm_max_c;
+  float accel_x_rms;
+  float accel_y_rms;
+  float accel_mag_rms;
+  float therm_gradient_c;
+  float therm_hotspot_pct;
 
   uint8_t quality;
 };

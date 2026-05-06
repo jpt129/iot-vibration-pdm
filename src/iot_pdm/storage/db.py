@@ -74,13 +74,17 @@ async def insert_feature(conn, row: dict) -> None:
             rms_g, kurtosis, crest, peak_hz, peak_mag,
             mel_0, mel_1, mel_2, mel_3, mel_4, mel_5,
             therm_min_c, therm_mean_c, therm_max_c,
+            accel_x_rms, accel_y_rms, accel_mag_rms,
+            therm_gradient_c, therm_hotspot_pct,
             anomaly_score, anomaly_flag, z_rms, late
         ) VALUES (
             $1,$2,$3,$4,$5,$6,$7,
             $8,$9,$10,$11,$12,
             $13,$14,$15,$16,$17,$18,
             $19,$20,$21,
-            $22,$23,$24,$25
+            $22,$23,$24,
+            $25,$26,
+            $27,$28,$29,$30
         )
         ON CONFLICT (msg_id, time) DO NOTHING
         """,
@@ -89,6 +93,8 @@ async def insert_feature(conn, row: dict) -> None:
         row["rms_g"], row["kurtosis"], row["crest"], row["peak_hz"], row["peak_mag"],
         *row["mel"],
         row["therm_min_c"], row["therm_mean_c"], row["therm_max_c"],
+        row.get("accel_x_rms"), row.get("accel_y_rms"), row.get("accel_mag_rms"),
+        row.get("therm_gradient_c"), row.get("therm_hotspot_pct"),
         row.get("anomaly_score"), row.get("anomaly_flag"),
         row.get("z_rms"), row.get("late", False),
     )

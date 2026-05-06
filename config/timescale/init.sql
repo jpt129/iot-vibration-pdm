@@ -70,6 +70,11 @@ CREATE TABLE IF NOT EXISTS features (
   therm_min_c   DOUBLE PRECISION,
   therm_mean_c  DOUBLE PRECISION,
   therm_max_c   DOUBLE PRECISION,
+  accel_x_rms       REAL,
+  accel_y_rms       REAL,
+  accel_mag_rms     REAL,
+  therm_gradient_c  REAL,
+  therm_hotspot_pct REAL,
 
   anomaly_score DOUBLE PRECISION,
   anomaly_flag  BOOLEAN,

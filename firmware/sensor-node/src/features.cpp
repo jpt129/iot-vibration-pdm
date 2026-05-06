@@ -82,6 +82,26 @@ static void compute_imu_features(FeatureVector &f) {
   }
   f.peak_hz  = (float)(max_bin * bin_hz);
   f.peak_mag = (float)(max_mag / IMU_FFT_SIZE);
+
+  // Compute X/Y RMS and 3-axis magnitude
+  static float bufx[IMU_FFT_SIZE], bufy[IMU_FFT_SIZE], bufz[IMU_FFT_SIZE];
+  if (imu_snapshot_xyz(bufx, bufy, bufz, IMU_FFT_SIZE)) {
+    double sx2 = 0, sy2 = 0, smag2 = 0;
+    double mx = 0, my = 0;
+    for (int i = 0; i < IMU_FFT_SIZE; i++) { mx += bufx[i]; my += bufy[i]; }
+    mx /= IMU_FFT_SIZE; my /= IMU_FFT_SIZE;
+    for (int i = 0; i < IMU_FFT_SIZE; i++) {
+      double dx = bufx[i] - mx;
+      double dy = bufy[i] - my;
+      double dz = bufz[i] - mean;
+      sx2 += dx*dx;
+      sy2 += dy*dy;
+      smag2 += dx*dx + dy*dy + dz*dz;
+    }
+    f.accel_x_rms   = (float)sqrt(sx2 / IMU_FFT_SIZE);
+    f.accel_y_rms   = (float)sqrt(sy2 / IMU_FFT_SIZE);
+    f.accel_mag_rms = (float)sqrt(smag2 / IMU_FFT_SIZE);
+  }
 }
 
 static void compute_mic_features(FeatureVector &f) {
@@ -97,8 +117,12 @@ static void compute_thermal_features(FeatureVector &f) {
     f.therm_min_c  = g_thermal_min_c;
     f.therm_mean_c = g_thermal_mean_c;
     f.therm_max_c  = g_thermal_max_c;
+    f.therm_gradient_c = g_thermal_max_c - g_thermal_min_c;
+    f.therm_hotspot_pct = g_thermal_hotspot_pct;
   } else {
     f.therm_min_c = f.therm_mean_c = f.therm_max_c = 0;
+    f.therm_gradient_c = 0;
+    f.therm_hotspot_pct = 0;
   }
 }
 

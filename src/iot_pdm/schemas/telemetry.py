@@ -32,6 +32,13 @@ class Metrics(BaseModel):
     therm_min_c: float = Field(ge=-40.0, le=150.0)
     therm_mean_c: float = Field(ge=-40.0, le=150.0)
     therm_max_c: float = Field(ge=-40.0, le=150.0)
+    # Multi-axis vibration (added in v1.1)
+    accel_x_rms: float | None = Field(default=None, ge=0.0, le=32.0)
+    accel_y_rms: float | None = Field(default=None, ge=0.0, le=32.0)
+    accel_mag_rms: float | None = Field(default=None, ge=0.0, le=64.0)
+    # Thermal derived (added in v1.1)
+    therm_gradient_c: float | None = Field(default=None, ge=0.0, le=200.0)
+    therm_hotspot_pct: float | None = Field(default=None, ge=0.0, le=100.0)
 
     @field_validator("mel")
     @classmethod
