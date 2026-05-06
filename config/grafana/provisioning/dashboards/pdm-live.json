@@ -124,18 +124,24 @@
     },
     {
       "id": 5,
-      "title": "FFT peak (Hz) vs RMS (g)",
-      "type": "xychart",
+      "title": "3-axis vibration breakdown (g)",
+      "type": "timeseries",
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
       "datasource": {"type": "postgres", "uid": "pdm-timescale"},
       "targets": [
         {
           "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT peak_hz AS x, rms_g AS y FROM features WHERE device_id = '$device_id' AND $__timeFilter(time) AND peak_hz IS NOT NULL"
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", accel_x_rms AS \"X axis\", accel_y_rms AS \"Y axis\", accel_mag_rms AS \"3-axis magnitude\" FROM features WHERE device_id = '$device_id' AND $__timeFilter(time) AND accel_x_rms IS NOT NULL ORDER BY time"
         }
       ],
-      "fieldConfig": {"defaults": {"custom": {"pointSize": 5}}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "accG",
+          "custom": {"lineWidth": 2, "fillOpacity": 5, "showPoints": "never"},
+          "color": {"mode": "palette-classic"}
+        }
+      }
     },
     {
       "id": 6,
