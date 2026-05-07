@@ -11,6 +11,7 @@ user worker
 topic read  iotpdm/#
 topic write iotpdm/+/+/+/alert
 topic write iotpdm/+/+/+/dlq
+topic write iotpdm/+/+/+/cmd
 topic read  $SYS/#
 
 # ------- Per-device ACLs (pattern uses %u substitution = client username) -------
